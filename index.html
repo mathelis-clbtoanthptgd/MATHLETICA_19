@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="vi">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BREAK THE CODE</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+            color: #f0f0f0;
+            overflow: auto;
+        }
+
+        .game-wrapper {
+            width: 100%;
+            min-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Start Screen */
+        .start-screen {
+            text-align: center;
+            padding: 40px 30px;
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #d4af37;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .game-logo {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #d4af37;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
+            margin-bottom: 15px;
+            letter-spacing: 5px;
+        }
+
+        .game-subtitle {
+            font-size: 1rem;
+            color: #999;
+            margin-bottom: 40px;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        .player-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            background: rgba(30, 30, 30, 0.8);
+            border: 2px solid #444;
+            border-radius: 8px;
+            color: #f0f0f0;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .player-input:focus {
+            outline: none;
+            border-color: #d4af37;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        .player-input::placeholder {
+            color: #666;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #d4af37 0%, #c49a2e 100%);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 25px rgba(212, 175, 55, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Game Screen */
+        .game-screen {
+            padding: 30px;
+            background: rgba(20, 20, 20, 0.95);
+            border: 2px solid #d4af37;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #444;
+        }
+
+        .player-name {
+            color: #d4af37;
+            font-size: 1rem;
+        }
+
+        .timer {
+            font-size: 1.3rem;
+            color: #d4af37;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+        }
+
+        .clues-board {
+            margin-bottom: 30px;
+        }
+
+        .clues-title {
+            font-size: 1.2rem;
+            color: #d4af37;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .clue-item {
+            background: rgba(30, 30, 30, 0.8);
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border-left: 3px solid #d4af37;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .clue-item:hover {
+            background: rgba(40, 40, 40, 0.9);
+            transform: translateX(5px);
+        }
+
+        .clue-code {
+            font-size: 1.5rem;
+            letter-spacing: 10px;
+            color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        .clue-hint {
+            font-size: 0.9rem;
+            color: #999;
+            text-align: right;
+            max-width: 55%;
+        }
+
+        .input-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .code-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .code-digit {
+            width: 70px;
+            height: 80px;
+            font-size: 2.5rem;
+            text-align: center;
+            background: rgba(30, 30, 30, 0.9);
+            border: 3px solid #444;
+            border-radius: 10px;
+            color: #d4af37;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .code-digit:focus {
+            outline: none;
+            border-color: #d4af37;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+            transform: scale(1.05);
+        }
+
+        .error-message {
+            color: #ff4444;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            min-height: 20px;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        /* Victory Modal */
+        .victory-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .victory-modal.active {
+            display: flex;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .victory-content {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            padding: 40px 30px;
+            border-radius: 15px;
+            border: 3px solid #d4af37;
+            box-shadow: 0 0 50px rgba(212, 175, 55, 0.8);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .victory-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .victory-title {
+            font-size: 2rem;
+            color: #d4af37;
+            margin-bottom: 25px;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
+        }
+
+        .victory-info {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .victory-info strong {
+            color: #d4af37;
+        }
+
+        .victory-code {
+            font-size: 2rem;
+            letter-spacing: 15px;
+            color: #d4af37;
+            margin: 20px 0;
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.8);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .game-logo {
+                font-size: 2rem;
+                letter-spacing: 3px;
+            }
+
+            .game-subtitle {
+                font-size: 0.9rem;
+            }
+
+            .clue-code {
+                font-size: 1.2rem;
+                letter-spacing: 8px;
+            }
+
+            .clue-hint {
+                font-size: 0.8rem;
+            }
+
+            .code-digit {
+                width: 60px;
+                height: 70px;
+                font-size: 2rem;
+            }
+
+            .code-inputs {
+                gap: 10px;
+            }
+
+            .victory-title {
+                font-size: 1.5rem;
+            }
+
+            .victory-code {
+                font-size: 1.5rem;
+                letter-spacing: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .clue-item {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .clue-hint {
+                max-width: 100%;
+            }
+
+            .code-digit {
+                width: 50px;
+                height: 60px;
+                font-size: 1.8rem;
+            }
+
+            .code-inputs {
+                gap: 8px;
+            }
+        }
+
+        /* Explanation Screen Styles */
+        .explanation-steps {
+            margin-bottom: 30px;
+        }
+
+        .explain-step {
+            background: rgba(30, 30, 30, 0.8);
+            border-left: 4px solid #d4af37;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .explain-step:hover {
+            background: rgba(40, 40, 40, 0.9);
+            transform: translateX(5px);
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #d4af37;
+            color: #000;
+            font-weight: bold;
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .step-title {
+            font-size: 1.2rem;
+            color: #d4af37;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .step-text {
+            color: #f0f0f0;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .step-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .step-list li {
+            padding: 8px 0 8px 25px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .step-list li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #d4af37;
+            font-weight: bold;
+        }
+
+        .highlight-green {
+            color: #00ff88;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+        }
+
+        .highlight-red {
+            color: #ff4444;
+            font-weight: bold;
+            text-decoration: line-through;
+        }
+
+        .final-answer {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border: 3px solid #d4af37;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-top: 30px;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div class="game-wrapper"><!-- Start Screen -->
+   <div class="screen active" id="startScreen">
+    <div class="start-screen">
+     <div class="game-logo" id="gameTitle">
+      BREAK THE CODE
+     </div>
+     <div class="game-subtitle" id="gameSubtitle">
+      Mathletica: Đố vui không thưởng #19
+     </div>
+     <div class="input-group"><input type="text" class="player-input" id="playerNameInput" maxlength="30">
+     </div><button class="btn" id="startBtn" disabled></button>
+    </div>
+   </div><!-- Game Screen -->
+   <div class="screen" id="gameScreen">
+    <div class="game-screen">
+     <div class="game-header">
+      <div class="player-name" id="playerDisplay">
+       Người chơi:
+      </div>
+      <div class="timer" id="timer">
+       00:00
+      </div>
+     </div>
+     <div class="clues-board">
+      <div class="clues-title">
+       🔍 MANH MỐI
+      </div>
+      <div class="clue-item"><span class="clue-code">9 2 8 5</span> <span class="clue-hint">Một số đúng nhưng sai vị trí</span>
+      </div>
+      <div class="clue-item"><span class="clue-code">1 9 3 7</span> <span class="clue-hint">Hai số đúng nhưng sai vị trí</span>
+      </div>
+      <div class="clue-item"><span class="clue-code">5 2 0 1</span> <span class="clue-hint">Một số đúng và đặt đúng vị trí</span>
+      </div>
+      <div class="clue-item"><span class="clue-code">6 5 0 7</span> <span class="clue-hint">Không có số nào đúng</span>
+      </div>
+      <div class="clue-item"><span class="clue-code">8 5 2 4</span> <span class="clue-hint">Hai số đúng nhưng sai vị trí</span>
+      </div>
+     </div>
+     <div class="input-section">
+      <div class="error-message" id="errorMsg"></div>
+      <div class="code-inputs" id="codeInputs"><input type="text" class="code-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" data-index="0"> <input type="text" class="code-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" data-index="1"> <input type="text" class="code-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" data-index="2"> <input type="text" class="code-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" data-index="3">
+      </div><button class="btn" id="unlockBtn"></button>
+     </div>
+    </div>
+   </div>
+  </div><!-- Victory Modal -->
+  <div class="victory-modal" id="victoryModal">
+   <div class="victory-content">
+    <div class="victory-icon">
+     🔓
+    </div>
+    <div class="victory-title" id="victoryTitle">
+     MỞ KHÓA THÀNH CÔNG!
+    </div>
+    <div class="victory-info">
+     <div>
+      <strong>Thám tử:</strong> <span id="victoryPlayer"></span>
+     </div>
+     <div>
+      <strong>Thời gian hoàn thành:</strong> <span id="victoryTime"></span>
+     </div>
+     <div style="margin-top: 20px;">
+      <strong>Mật mã chính xác là:</strong>
+     </div>
+     <div class="victory-code">
+      3 - 8 - 4 - 1
+     </div>
+    </div>
+    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;"><button class="btn" id="explainBtn"></button> <button class="btn" id="replayBtn"></button>
+    </div>
+   </div>
+  </div><!-- Explanation Screen -->
+  <div class="screen" id="explainScreen">
+   <div class="game-screen" style="max-width: 700px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 30px;">
+     <div style="font-size: 2rem; color: #d4af37; margin-bottom: 10px;">
+      🧠 GIẢI THÍCH LỜI GIẢI
+     </div>
+     <div style="color: #999;">
+      Lập luận logic để tìm ra đáp án
+     </div>
+    </div>
+    <div class="explanation-steps">
+     <div class="explain-step">
+      <div class="step-number">
+       Bước 1
+      </div>
+      <div class="step-content">
+       <div class="step-title">
+        Loại bỏ các số không có trong mật mã
+       </div>
+       <div class="step-text">
+        Từ <strong>6 5 0 7</strong> (Không có số nào đúng) → Loại bỏ: <span class="highlight-red">6, 5, 0, 7</span>
+       </div>
+      </div>
+     </div>
+     <div class="explain-step">
+      <div class="step-number">
+       Bước 2
+      </div>
+      <div class="step-content">
+       <div class="step-title">
+        Xác định số 1 và vị trí của nó
+       </div>
+       <div class="step-text">
+        Nhìn vào <strong>5 2 0 1</strong> (Một số đúng và đúng vị trí):
+       </div>
+       <ul class="step-list">
+        <li>Số 5 và 0 đã bị loại → Còn lại 2 và 1</li>
+        <li>Nếu số 2 đúng (ở vị trí thứ 2): Nhìn lên <strong>9 2 8 5</strong>, số 2 cũng ở vị trí thứ 2 nhưng đề bài lại bảo "Sai vị trí" → Mâu thuẫn</li>
+        <li>Kết luận: Số <span class="highlight-green">1</span> là số đúng và nằm ở <span class="highlight-green">vị trí cuối cùng</span> → <strong>❌ ❌ ❌ 1</strong></li>
+       </ul>
+      </div>
+     </div>
+     <div class="explain-step">
+      <div class="step-number">
+       Bước 3
+      </div>
+      <div class="step-content">
+       <div class="step-title">
+        Xác định số 8 và 4
+       </div>
+       <div class="step-text">
+        Nhìn vào <strong>8 5 2 4</strong> (Hai số đúng nhưng sai vị trí):
+       </div>
+       <ul class="step-list">
+        <li>Số 5, 2 đã bị loại → Vậy <span class="highlight-green">8</span> và <span class="highlight-green">4</span> là hai số đúng</li>
+        <li>Nhìn lại <strong>9 2 8 5</strong>: Số 2, 5 đã loại. Nếu 8 đúng → Số 9 phải sai</li>
+       </ul>
+      </div>
+     </div>
+     <div class="explain-step">
+      <div class="step-number">
+       Bước 4
+      </div>
+      <div class="step-content">
+       <div class="step-title">
+        Xác định số 3
+       </div>
+       <div class="step-text">
+        Nhìn vào <strong>1 9 3 7</strong> (Hai số đúng nhưng sai vị trí):
+       </div>
+       <ul class="step-list">
+        <li>Số 1 đúng (đã xác định), số 7 loại, số 9 loại</li>
+        <li>Đề nói "Hai số đúng" → Vậy số còn lại là <span class="highlight-green">3</span></li>
+        <li>Danh sách 4 số: <strong>1, 3, 4, 8</strong></li>
+       </ul>
+      </div>
+     </div>
+     <div class="explain-step">
+      <div class="step-number">
+       Bước 5
+      </div>
+      <div class="step-content">
+       <div class="step-title">
+        Xếp vị trí các số
+       </div>
+       <div class="step-text">
+        Tổng hợp thông tin về vị trí:
+       </div>
+       <ul class="step-list">
+        <li>Số 1: Đã xác định ở vị trí cuối → <strong>❌ ❌ ❌ 1</strong></li>
+        <li>Số 8: Không ở vị trí đầu (hàng 8 5 2 4), không ở vị trí 3 (hàng 9 2 8 5) → Số 8 phải ở <span class="highlight-green">vị trí 2</span> → <strong>❌ 8 ❌ 1</strong></li>
+        <li>Số 3: Không ở vị trí 3 (hàng 1 9 3 7) → Số 3 phải ở <span class="highlight-green">vị trí 1</span> → <strong>3 8 ❌ 1</strong></li>
+        <li>Số 4: Còn lại vị trí duy nhất là <span class="highlight-green">vị trí 3</span> → <strong>3 8 4 1</strong></li>
+       </ul>
+      </div>
+     </div>
+     <div class="final-answer">
+      <div style="font-size: 1.5rem; margin-bottom: 15px;">
+       ✅ ĐÁP ÁN CUỐI CÙNG
+      </div>
+      <div class="victory-code" style="margin: 0;">
+       3 - 8 - 4 - 1
+      </div>
+     </div>
+    </div>
+    <div style="text-align: center; margin-top: 30px;"><button class="btn" id="backBtn">← Quay lại</button>
+    </div>
+   </div>
+  </div>
+  <script>
+        const CORRECT_CODE = '3841';
+        
+        const defaultConfig = {
+            game_title: 'BREAK THE CODE',
+            game_subtitle: 'Mathletica: Đố vui không thưởng #19',
+            player_label: 'Nhập tên thám tử...',
+            start_button_text: 'BẮT ĐẦU GIẢI MÃ',
+            unlock_button_text: 'MỞ KHÓA',
+            victory_title: 'MỞ KHÓA THÀNH CÔNG!',
+            explain_button_text: 'Xem Lời Giải',
+            replay_button_text: 'Chơi lại',
+            background_color: '#0f0f0f',
+            surface_color: '#1a1a1a',
+            text_color: '#f0f0f0',
+            primary_action_color: '#d4af37',
+            secondary_action_color: '#444444'
+        };
+
+        let playerName = '';
+        let timerInterval = null;
+        let seconds = 0;
+
+        // DOM Elements
+        const startScreen = document.getElementById('startScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const explainScreen = document.getElementById('explainScreen');
+        const victoryModal = document.getElementById('victoryModal');
+        const playerNameInput = document.getElementById('playerNameInput');
+        const startBtn = document.getElementById('startBtn');
+        const playerDisplay = document.getElementById('playerDisplay');
+        const timerDisplay = document.getElementById('timer');
+        const codeInputs = document.querySelectorAll('.code-digit');
+        const unlockBtn = document.getElementById('unlockBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const victoryPlayer = document.getElementById('victoryPlayer');
+        const victoryTime = document.getElementById('victoryTime');
+        const explainBtn = document.getElementById('explainBtn');
+        const replayBtn = document.getElementById('replayBtn');
+        const backBtn = document.getElementById('backBtn');
+
+        async function onConfigChange(config) {
+            const gameTitle = config.game_title || defaultConfig.game_title;
+            const gameSubtitle = config.game_subtitle || defaultConfig.game_subtitle;
+            const playerLabel = config.player_label || defaultConfig.player_label;
+            const startButtonText = config.start_button_text || defaultConfig.start_button_text;
+            const unlockButtonText = config.unlock_button_text || defaultConfig.unlock_button_text;
+            const victoryTitle = config.victory_title || defaultConfig.victory_title;
+            const explainButtonText = config.explain_button_text || defaultConfig.explain_button_text;
+            const replayButtonText = config.replay_button_text || defaultConfig.replay_button_text;
+
+            const backgroundColor = config.background_color || defaultConfig.background_color;
+            const surfaceColor = config.surface_color || defaultConfig.surface_color;
+            const textColor = config.text_color || defaultConfig.text_color;
+            const primaryActionColor = config.primary_action_color || defaultConfig.primary_action_color;
+            const secondaryActionColor = config.secondary_action_color || defaultConfig.secondary_action_color;
+
+            document.getElementById('gameTitle').textContent = gameTitle;
+            document.getElementById('gameSubtitle').textContent = gameSubtitle;
+            playerNameInput.placeholder = playerLabel;
+            startBtn.textContent = startButtonText;
+            unlockBtn.textContent = unlockButtonText;
+            document.getElementById('victoryTitle').textContent = victoryTitle;
+            explainBtn.textContent = explainButtonText;
+            replayBtn.textContent = replayButtonText;
+
+            document.body.style.background = `linear-gradient(135deg, ${backgroundColor} 0%, ${surfaceColor} 50%, ${backgroundColor} 100%)`;
+            document.body.style.color = textColor;
+
+            document.querySelectorAll('.start-screen, .game-screen').forEach(el => {
+                el.style.background = `rgba(${hexToRgb(surfaceColor)}, 0.95)`;
+                el.style.borderColor = primaryActionColor;
+            });
+
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.style.background = `linear-gradient(135deg, ${primaryActionColor} 0%, ${adjustBrightness(primaryActionColor, -10)} 100%)`;
+            });
+
+            document.querySelectorAll('.code-digit').forEach(input => {
+                input.style.borderColor = secondaryActionColor;
+                input.style.color = primaryActionColor;
+            });
+
+            document.querySelectorAll('.clue-item').forEach(item => {
+                item.style.borderLeftColor = primaryActionColor;
+            });
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '20, 20, 20';
+        }
+
+        function adjustBrightness(hex, percent) {
+            const num = parseInt(hex.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255))
+                .toString(16).slice(1);
+        }
+
+        // Enable start button when name is entered
+        playerNameInput.addEventListener('input', (e) => {
+            startBtn.disabled = e.target.value.trim() === '';
+        });
+
+        // Start game
+        startBtn.addEventListener('click', () => {
+            playerName = playerNameInput.value.trim();
+            if (playerName) {
+                startScreen.classList.remove('active');
+                gameScreen.classList.add('active');
+                playerDisplay.textContent = `Người chơi: ${playerName}`;
+                startTimer();
+                codeInputs[0].focus();
+            }
+        });
+
+        // Timer
+        function startTimer() {
+            seconds = 0;
+            timerInterval = setInterval(() => {
+                seconds++;
+                const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                timerDisplay.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        // Code input handling
+        codeInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value && /^\d$/.test(value)) {
+                    if (index < codeInputs.length - 1) {
+                        codeInputs[index + 1].focus();
+                    }
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !input.value && index > 0) {
+                    codeInputs[index - 1].focus();
+                }
+            });
+
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').slice(0, 4);
+                if (/^\d+$/.test(pastedData)) {
+                    pastedData.split('').forEach((digit, i) => {
+                        if (i < codeInputs.length) {
+                            codeInputs[i].value = digit;
+                        }
+                    });
+                    codeInputs[Math.min(pastedData.length, codeInputs.length - 1)].focus();
+                }
+            });
+        });
+
+        // Check code
+        unlockBtn.addEventListener('click', checkCode);
+
+        function checkCode() {
+            const enteredCode = Array.from(codeInputs).map(input => input.value).join('');
+            
+            if (enteredCode.length !== 4) {
+                showError('Vui lòng nhập đủ 4 số!');
+                return;
+            }
+
+            if (enteredCode === CORRECT_CODE) {
+                stopTimer();
+                showVictory();
+            } else {
+                showError('Mật mã sai. Thử lại!');
+                shakeInputs();
+            }
+        }
+
+        function showError(message) {
+            errorMsg.textContent = message;
+            setTimeout(() => {
+                errorMsg.textContent = '';
+            }, 3000);
+        }
+
+        function shakeInputs() {
+            const inputsContainer = document.getElementById('codeInputs');
+            inputsContainer.classList.add('shake');
+            setTimeout(() => {
+                inputsContainer.classList.remove('shake');
+            }, 300);
+        }
+
+        function showVictory() {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            
+            victoryPlayer.textContent = playerName;
+            victoryTime.textContent = `${mins}:${secs}`;
+            victoryModal.classList.add('active');
+        }
+
+        // Replay
+        replayBtn.addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Explain button
+        explainBtn.addEventListener('click', () => {
+            victoryModal.classList.remove('active');
+            gameScreen.classList.remove('active');
+            explainScreen.classList.add('active');
+        });
+
+        // Back button
+        backBtn.addEventListener('click', () => {
+            explainScreen.classList.remove('active');
+            victoryModal.classList.add('active');
+        });
+
+        // Initialize SDK
+        if (window.elementSdk) {
+            window.elementSdk.init({
+                defaultConfig,
+                onConfigChange,
+                mapToCapabilities: (config) => ({
+                    recolorables: [
+                        {
+                            get: () => config.background_color || defaultConfig.background_color,
+                            set: (value) => {
+                                config.background_color = value;
+                                window.elementSdk.setConfig({ background_color: value });
+                            }
+                        },
+                        {
+                            get: () => config.surface_color || defaultConfig.surface_color,
+                            set: (value) => {
+                                config.surface_color = value;
+                                window.elementSdk.setConfig({ surface_color: value });
+                            }
+                        },
+                        {
+                            get: () => config.text_color || defaultConfig.text_color,
+                            set: (value) => {
+                                config.text_color = value;
+                                window.elementSdk.setConfig({ text_color: value });
+                            }
+                        },
+                        {
+                            get: () => config.primary_action_color || defaultConfig.primary_action_color,
+                            set: (value) => {
+                                config.primary_action_color = value;
+                                window.elementSdk.setConfig({ primary_action_color: value });
+                            }
+                        },
+                        {
+                            get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+                            set: (value) => {
+                                config.secondary_action_color = value;
+                                window.elementSdk.setConfig({ secondary_action_color: value });
+                            }
+                        }
+                    ],
+                    borderables: [],
+                    fontEditable: undefined,
+                    fontSizeable: undefined
+                }),
+                mapToEditPanelValues: (config) => new Map([
+                    ['game_title', config.game_title || defaultConfig.game_title],
+                    ['game_subtitle', config.game_subtitle || defaultConfig.game_subtitle],
+                    ['player_label', config.player_label || defaultConfig.player_label],
+                    ['start_button_text', config.start_button_text || defaultConfig.start_button_text],
+                    ['unlock_button_text', config.unlock_button_text || defaultConfig.unlock_button_text],
+                    ['victory_title', config.victory_title || defaultConfig.victory_title],
+                    ['explain_button_text', config.explain_button_text || defaultConfig.explain_button_text],
+                    ['replay_button_text', config.replay_button_text || defaultConfig.replay_button_text]
+                ])
+            });
+        }
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b9ca958b055dd53',t:'MTc2NzcxNzY3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
